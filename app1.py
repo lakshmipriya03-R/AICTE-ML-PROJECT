@@ -1,67 +1,84 @@
 import streamlit as st
 import pandas as pd
-import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 
-# Load the trained model
-model = joblib.load("greenhouse_model.pkl")
+# Page config
+st.set_page_config(page_title="🌱 GHG Emission Predictor", layout="centered")
 
-# Streamlit Page Config
-st.set_page_config(page_title="🌍 GHG Emission Predictor", layout="centered")
+st.markdown("<h1 style='text-align:center;color:#007200;'>🌍 Greenhouse Gas Emission Predictor</h1>", unsafe_allow_html=True)
 
-# Custom Styling
-st.markdown("""
-    <style>
-        .title {
-            text-align: center;
-            font-size: 36px;
-            color: #2E8B57;
-            margin-bottom: 20px;
-        }
-        .box {
-            background-color: #f4f4f4;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .footer {
-            text-align: center;
-            color: gray;
-            font-size: 13px;
-            margin-top: 30px;
-        }
-    </style>
-""", unsafe_allow_html=True)
+# Load dataset
+@st.cache_data
+def load_data():
+    df = pd.read_csv("greenhouse_gas.csv")
+    df = df.dropna()
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    return df
 
-st.markdown("<div class='title'>🌍 Greenhouse Gas Emission Predictor</div>", unsafe_allow_html=True)
-st.markdown("#### Powered by IBM SkillsBuild Internship | Created by Lakshmi Priya R")
-st.markdown("---")
+df = load_data()
 
-# Input Form
-with st.form("prediction_form"):
-    st.markdown("<div class='box'>", unsafe_allow_html=True)
-    
-    industry_code = st.selectbox("🏢 Industry Code", [
-        "111CA", "113FF", "211", "212", "213", "22", "23", "311FT", "313TT", "315AL", "321", "322", "323", "324", "325"
+# Select columns
+feature_cols = ['Industry Name', 'Substance', 'Supply Chain Emission Factors without Margins']
+target_col = 'Supply Chain Emission Factors with Margins'
+
+# Sidebar Info
+with st.sidebar:
+    st.image("https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg", width=180)
+    st.markdown("### 👩‍💻 Lakshmi Priya R")
+    st.markdown("🧠 AI & Data Science Intern at IBM SkillsBuild")
+    st.markdown("---")
+    st.info("Fill the details to predict greenhouse gas emissions")
+
+# User Inputs
+with st.form("ghg_form"):
+    industry = st.selectbox("🏭 Industry", sorted(df['Industry Name'].unique()))
+    substance = st.selectbox("🧪 Gas Type", sorted(df['Substance'].unique()))
+    base_emission = st.number_input("🔢 Base Emission (kg per USD)", min_value=0.0, max_value=5.0, value=0.5)
+
+    submit = st.form_submit_button("🚀 Predict")
+
+if submit:
+    # Prepare training data
+    X = df[feature_cols]
+    y = df[target_col]
+
+    # Train/Test Split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Preprocessing
+    categorical_features = ['Industry Name', 'Substance']
+    numeric_features = ['Supply Chain Emission Factors without Margins']
+
+    preprocessor = ColumnTransformer([
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features)
+    ], remainder='passthrough')
+
+    # Pipeline
+    model = Pipeline([
+        ("preprocessor", preprocessor),
+        ("regressor", RandomForestRegressor(n_estimators=100, random_state=42))
     ])
-    
-    industry_name = st.selectbox("🏭 Industry Name", [
-        "Farms", "Forestry, fishing, and related activities", "Oil and gas extraction",
-        "Mining, except oil and gas", "Support activities for mining", "Utilities", "Construction"
-    ])
-    
-    substance = st.selectbox("💨 Gas Type", ["carbon dioxide", "methane", "nitrous oxide", "other GHGs"])
-    
-    submitted = st.form_submit_button("🔍 Predict Emission")
 
-if submitted:
-    input_data = pd.DataFrame({
-        "Industry Code": [industry_code],
-        "Industry Name": [industry_name],
-        "Substance": [substance]
+    # Train
+    model.fit(X_train, y_train)
+
+    # Predict
+    user_df = pd.DataFrame({
+        'Industry Name': [industry],
+        'Substance': [substance],
+        'Supply Chain Emission Factors without Margins': [base_emission]
     })
 
-    prediction = model.predict(input_data)[0]
-    
-    st.success(f"🌿 **Predicted GHG Emission Factor**: **{prediction:.3f} kg/2018 USD**")
+    prediction = model.predict(user_df)[0]
 
-st.markdown("<div class='footer'>© 2025 | Greenhouse GHG ML App | IBM Internship Project</div>", unsafe_allow_html=True)
+    # Show result
+    st.success(f"🌡️ Predicted GHG Emission with Margin: **{prediction:.3f} kg CO₂e/USD**")
+
+# Footer
+st.markdown("<hr>", unsafe_allow_html=True)
+st.markdown("<center>🌱 IBM SkillsBuild Internship • Greenhouse Gas Emission Project</center>", unsafe_allow_html=True)
+
