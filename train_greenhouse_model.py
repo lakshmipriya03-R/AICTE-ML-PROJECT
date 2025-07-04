@@ -1,39 +1,29 @@
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-import joblib
+from xgboost import XGBRegressor
+import pickle
 
-# Load dataset
-df = pd.read_csv("greenhouse_gas.csv")
+# Load your dataset
+df = pd.read_csv("greenhouse_gas.xlsx.csv")  # or use your exact file
 
-# Drop unnamed index columns if present
-df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
+# Clean column names
+df.columns = [col.lower().strip().replace(" ", "_") for col in df.columns]
 
-# Define features and target
-X = df[["Industry Code", "Industry Name", "Substance", "Supply Chain Emission Factors without Margins"]]
-y = df["Supply Chain Emission Factors with Margins"]
+# Split input and output
+X = df.drop("emission_factor", axis=1)
+y = df["emission_factor"]
 
-# Preprocessing for categorical data
-categorical = ["Industry Code", "Industry Name", "Substance"]
-numeric = ["Supply Chain Emission Factors without Margins"]
-
-preprocessor = ColumnTransformer([
-    ("cat", OneHotEncoder(handle_unknown='ignore'), categorical)
-], remainder='passthrough')
-
-# Pipeline
-model = Pipeline([
-    ("pre", preprocessor),
-    ("regressor", RandomForestRegressor(n_estimators=100, random_state=42))
-])
-
-# Train
+# Train-test split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the model
+model = XGBRegressor()
 model.fit(X_train, y_train)
 
-# Save model
-joblib.dump(model, "greenhouse_model.pkl")
+# Save as .pkl (pickle)
+with open("train_greenhouse_model.pkl", "wb") as file:
+    pickle.dump(model, file)
+
+print("✅ Model saved successfully as train_greenhouse_model.pkl")
+
 
