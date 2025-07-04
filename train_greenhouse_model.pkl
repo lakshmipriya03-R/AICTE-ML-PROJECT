@@ -1,0 +1,31 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from xgboost import XGBRegressor
+import pickle
+
+# Load dataset
+df = pd.read_csv("greenhouse_gas.xlsx.csv")
+
+# Clean column names
+df.columns = [col.lower().strip().replace(" ", "_") for col in df.columns]
+
+# Drop unnecessary column if exists
+df = df.drop(columns=["unnamed:_7"], errors="ignore")
+
+# Define features and target
+X = df.drop(columns=["supply_chain_emission_factors_with_margins"])
+y = df["supply_chain_emission_factors_with_margins"]
+
+# One-hot encode categorical columns
+X = pd.get_dummies(X)
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train model
+model = XGBRegressor()
+model.fit(X_train, y_train)
+
+# Save model
+with open("train_greenhouse_model.pkl", "wb") as f:
+    pickle.dump(model, f)
