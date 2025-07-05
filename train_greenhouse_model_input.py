@@ -1,11 +1,12 @@
+import streamlit as st
 import pandas as pd
-
-# ✅ Load the model
 import xgboost as xgb
+
+# ✅ Load the trained model
 model = xgb.XGBRegressor()
 model.load_model("greenhouse_model.xgb")
 
-# ✅ Feature names (same order used during training)
+# ✅ Feature names (must match training order)
 feature_names = [
     "MedInc",       # Median income
     "HouseAge",     # Median house age
@@ -17,15 +18,22 @@ feature_names = [
     "Longitude"     # Longitude
 ]
 
-# ✅ Example input values (you can later replace these with dynamic input)
-inputs = [3.5, 25, 6.1, 1.1, 980.0, 2.6, 37.77, -122.42]  # <-- REPLACE with your own values or input()
+# ✅ Page title
+st.title("🏡 Greenhouse Model - Real-Time House Value Predictor")
+st.markdown("🔢 Enter California housing features to predict house value (trained with XGBoost)")
 
-# ✅ Convert to DataFrame
-input_df = pd.DataFrame([inputs], columns=feature_names)
+# ✅ Input fields
+inputs = []
+for feature in feature_names:
+    val = st.number_input(f"{feature}:", value=1.0, step=0.1)
+    inputs.append(val)
 
-# ✅ Predict
-prediction = model.predict(input_df)[0]
-print(f"✅ Predicted House Value: ${prediction * 100000:.2f}")
+# ✅ Prediction on button click
+if st.button("Predict House Value"):
+    input_df = pd.DataFrame([inputs], columns=feature_names)
+    prediction = model.predict(input_df)[0]
+    st.success(f"✅ Predicted House Value: **${prediction * 100000:.2f}**")
+
 
 
 
