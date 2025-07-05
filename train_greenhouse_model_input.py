@@ -1,55 +1,27 @@
-import streamlit as st
 import pandas as pd
-import xgboost as xgb
 
-# Load the model
-model = xgb.XGBRegressor()
-model.load_model("greenhouse_model.xgb")
-  # Make sure this file is in the same directory
+# ✅ Step 1: Define features in correct order
+feature_names = [
+    "MedInc",       # Median income
+    "HouseAge",     # Median house age
+    "AveRooms",     # Avg rooms per household
+    "AveBedrms",    # Avg bedrooms per household
+    "Population",   # Total population
+    "AveOccup",     # Avg occupants per household
+    "Latitude",     # Latitude
+    "Longitude"     # Longitude
+]
 
-# Streamlit UI
-st.set_page_config(page_title="GHG Emission Predictor", layout="centered")
-st.title("🌱 Greenhouse Gas Emission Predictor")
+# ✅ Step 2: Collect your user inputs into a list (modify this as per your UI)
+inputs = [float(val1), float(val2), float(val3), float(val4), float(val5), float(val6), float(val7), float(val8)]
 
-st.markdown("Enter the details below to predict emission factor:")
+# ✅ Step 3: Convert to a DataFrame with matching feature names
+input_df = pd.DataFrame([inputs], columns=feature_names)
 
-industry = st.selectbox("Select Industry", ["Electricity", "Cement", "Transport", "Fertilizer"])
-ghg = st.selectbox("Select Gas", ["CO2", "CH4", "N2O"])
-margin = st.slider("Enter Margin", 0.0, 10.0, 1.0)
-dq_assessment = st.slider("DQ Assessment Score", 0.0, 1.0, 0.5)
-dq_coverage = st.slider("DQ Coverage Score", 0.0, 1.0, 0.5)
-dq_uncertainty = st.slider("DQ Uncertainty Score", 0.0, 1.0, 0.5)
-dq_verification = st.slider("DQ Verification Score", 0.0, 1.0, 0.5)
+# ✅ Step 4: Make prediction
+prediction = model.predict(input_df)[0]
+print(f"Predicted house value: ${prediction * 100000:.2f}")
 
-# Predict on button click
-if st.button("🚀 Predict Emission"):
-    input_df = pd.DataFrame({
-        'industry': [industry],
-        'ghg': [ghg],
-        'margin': [margin],
-        'dq_assessment': [dq_assessment],
-        'dq_coverage': [dq_coverage],
-        'dq_uncertainty': [dq_uncertainty],
-        'dq_verification': [dq_verification]
-    })
-
-    # Convert categorical to dummy
-    input_df = pd.get_dummies(input_df)
-    
-    # Align with model input features
-    model_features = [
-        'margin', 'dq_assessment', 'dq_coverage',
-        'dq_uncertainty', 'dq_verification',
-        'industry_Cement', 'industry_Electricity', 'industry_Fertilizer', 'industry_Transport',
-        'ghg_CH4', 'ghg_CO2', 'ghg_N2O'
-    ]
-    for col in model_features:
-        if col not in input_df.columns:
-            input_df[col] = 0
-    input_df = input_df[model_features]
-
-    prediction = model.predict(input_df)[0]
-    st.success(f"🌍 Predicted Emission Factor: **{prediction:.4f}**")
 
 
 
