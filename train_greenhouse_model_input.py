@@ -4,7 +4,8 @@ import xgboost as xgb
 
 # Load the model
 model = xgb.XGBRegressor()
-model.load_model("train_greenhouse_model.json")  # Make sure this file is in the same directory
+model.load_model("greenhouse_model.xgb")
+  # Make sure this file is in the same directory
 
 # Streamlit UI
 st.set_page_config(page_title="GHG Emission Predictor", layout="centered")
