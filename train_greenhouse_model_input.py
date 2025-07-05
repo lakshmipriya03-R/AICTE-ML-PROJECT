@@ -1,6 +1,11 @@
 import pandas as pd
 
-# ✅ Step 1: Define features in correct order
+# ✅ Load the model
+import xgboost as xgb
+model = xgb.XGBRegressor()
+model.load_model("greenhouse_model.xgb")
+
+# ✅ Feature names (same order used during training)
 feature_names = [
     "MedInc",       # Median income
     "HouseAge",     # Median house age
@@ -12,15 +17,15 @@ feature_names = [
     "Longitude"     # Longitude
 ]
 
-# ✅ Step 2: Collect your user inputs into a list (modify this as per your UI)
-inputs = [float(val1), float(val2), float(val3), float(val4), float(val5), float(val6), float(val7), float(val8)]
+# ✅ Example input values (you can later replace these with dynamic input)
+inputs = [3.5, 25, 6.1, 1.1, 980.0, 2.6, 37.77, -122.42]  # <-- REPLACE with your own values or input()
 
-# ✅ Step 3: Convert to a DataFrame with matching feature names
+# ✅ Convert to DataFrame
 input_df = pd.DataFrame([inputs], columns=feature_names)
 
-# ✅ Step 4: Make prediction
+# ✅ Predict
 prediction = model.predict(input_df)[0]
-print(f"Predicted house value: ${prediction * 100000:.2f}")
+print(f"✅ Predicted House Value: ${prediction * 100000:.2f}")
 
 
 
